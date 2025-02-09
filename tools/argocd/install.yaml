@@ -1,0 +1,45 @@
+# Gateway definition
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: argocd-gateway
+spec:
+  selector:
+    istio: ingressgateway  # Selects the Istio ingress gateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "argocd.local"  # The hostname for the service
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    hosts:
+    - "argocd.local"  # The hostname for the service
+    tls:
+      mode: SIMPLE
+      credentialName: argocd-tls-secret  # Reference to your TLS secret (optional)
+
+---
+# VirtualService definition
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: argocd-server
+spec:
+  hosts:
+  - "argocd.local"  # The hostname for the service
+  gateways:
+  - istio-system/argocd-gateway  # Reference to the Gateway created earlier
+  http:
+  - match:
+    - uri:
+        prefix: "/"  # Matches all incoming requests
+    route:
+    - destination:
+        host: argocd-server.argocd.svc.cluster.local  # Service name and namespace
+        port:
+          number: 443  # Port the service is listening on (HTTPS)
