@@ -74,6 +74,10 @@ spec:
       value: "vmyronovych/kinspect-api"
     - name: dockerfile
       value: "Dockerfile"
+    - name: deployment-repo-url
+      value: "vmyronovych/kinspect-deploy"
+    - name: deployment-repo-revision
+      value: "main"
 
   volumeClaimTemplates:
   - metadata:
@@ -100,6 +104,8 @@ spec:
       - name: revision
       - name: image
       - name: dockerfile
+      - name: deployment-repo-url
+      - name: deployment-repo-revision
     steps:
     - - name: clone
         template: clone
@@ -117,8 +123,8 @@ spec:
           - name: dir
             value: "/mnt/sources"
       
-    - - name: build-and-push-docker-image
-        template: build-and-push-docker-image
+    - - name: docker
+        template: docker
         arguments:
           parameters:
           - name: commit-sha
@@ -127,6 +133,17 @@ spec:
             value: "{{inputs.parameters.image}}"
           - name: dockerfile
             value: "{{inputs.parameters.dockerfile}}"
+
+    - - name: deploy-dev
+        template: deploy-dev
+        arguments:
+          parameters:
+          - name: repo-url
+            value: "{{inputs.parameters.deployment-repo-url}}"
+          - name: repo-revision
+            value: "{{inputs.parameters.deployment-repo-revision}}"
+          - name: new-tag
+            value: "{{steps.clone.outputs.parameters.commit-sha}}"
 
   # Clone task
   - name: clone
@@ -158,7 +175,7 @@ spec:
           path: /mnt/commit-sha.txt
 
   # Image build and publish task using Kaniko
-  - name: build-and-push-docker-image
+  - name: docker
     inputs:
       parameters:
       - name: commit-sha
@@ -180,6 +197,55 @@ spec:
       env:
       - name: DOCKER_CONFIG
         value: /kaniko/.docker
+
+  # Update main branch of deployment repo with new dockerimage tag
+  - name: deploy-dev
+    inputs:
+      parameters:
+        - name: repo-url
+        - name: repo-revision
+        - name: new-tag
+    script:
+      image: alpine/git:latest
+      env:
+      - name: GITHUB_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: github-token-secret
+            key: token
+      command: ["/bin/sh"]
+      source: |
+        REPO_URL=https://$GITHUB_TOKEN@github.com/{{inputs.parameters.repo-url}}
+        echo clonning repository $REPO_URL. Revision: {{inputs.parameters.repo-revision}}
+        mkdir ./src
+        cd ./src
+        git clone -b {{inputs.parameters.repo-revision}} $REPO_URL .
+
+        echo clonned files
+        ls
+
+        echo updating image tag to {{inputs.parameters.new-tag}}
+        sed -i "s|image: vmyronovych/kinspect-api:.*|image: vmyronovych/kinspect-api:{{inputs.parameters.new-tag}}|" src/deployment.yaml
+
+        echo updated tag
+        cat src/deployment.yaml | grep image
+
+        echo configure git
+        git config --global user.email "viktor.myronovych@gmail.com"
+        git config --global user.name "Viktor Myronovych"
+
+        git status
+        
+        echo stage changes
+        git add src/deployment.yaml
+
+        git diff --cached
+
+        echo commit staged changes
+        git commit -m "Set image.tag to {{inputs.parameters.new-tag}} in src/deployment.yaml"
+
+        echo push changes
+        git push
 
   - name: ls-debug
     inputs:
