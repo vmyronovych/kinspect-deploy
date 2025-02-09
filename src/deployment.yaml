@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kinspect-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kinspect-api
+  template:
+    metadata:
+      labels:
+        app: kinspect-api
+    spec:
+      containers:
+        - name: kinspect-api
+          image: vmyronovych/kinspect-api:5602ac7 # Replace with your container image (e.g., "myregistry/myimage:latest")
+          ports:
+            - containerPort: 8080  # Expose container on port 8080
