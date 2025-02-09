@@ -7,7 +7,7 @@ spec:
     istio: ingressgateway  # Use Istio's default ingress gateway
   servers:
   - port:
-      number: 80
+      number: 443
       name: http
       protocol: HTTP
     hosts:
