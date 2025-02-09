@@ -1,38 +1,33 @@
-# Gateway definition
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
-  name: argocd-gateway
-  namespace: istio-system  # Modify if your Istio system is in a different namespace
+  name: argocd-server-gateway
 spec:
   selector:
-    istio: ingressgateway  # Selects the Istio ingress gateway
+    istio: ingressgateway  # Use Istio's default ingress gateway
   servers:
   - port:
       number: 80
       name: http
       protocol: HTTP
     hosts:
-    - "argocd.local"  # The hostname for the service
-
+    - "argocd.local"  # Exposing the service via this host
 ---
-# VirtualService definition
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
   name: argocd-server
-  namespace: argocd
 spec:
   hosts:
-  - "argocd.local"  # The hostname for the service
+  - "argocd.local"  # Traffic routed for this host
   gateways:
-  - istio-system/argocd-gateway  # Reference to the Gateway created earlier
+  - argocd-server-gateway
   http:
   - match:
     - uri:
-        prefix: "/"  # Matches all incoming requests
+        prefix: /  # All traffic goes to the argocd-server
     route:
     - destination:
-        host: argocd-server.argocd.svc.cluster.local  # Service name and namespace
+        host: argocd-server.argocd.svc.cluster.local
         port:
-          number: 80  # Use port 80 for HTTP
+          number: 443  # Port 443 for HTTPS traffic (your pods listen on HTTPS)
