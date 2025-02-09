@@ -9,14 +9,17 @@ spec:
     istio: ingressgateway # Use Istio's default ingress gateway
   servers:
   - port:
-      number: 443
-      name: https
-      protocol: HTTPS
+      number: 80
+      name: http
+      protocol: HTTP
     hosts:
     - "grafana.local" # Host to match for requests
-    tls:
-      mode: PASSTHROUGH # Use PASSTHROUGH to let Istio handle TLS termination
-      # Istio will auto-manage the certs in PASSTHROUGH mode and terminate the TLS connection
+    # If you want to enable TLS, replace the following block
+    # tls:
+    #   mode: SIMPLE
+    #   credentialName: grafana-tls-secret # Replace with your secret name
+    #   privateKey: sds
+    #   serverCertificate: sds
 
 ---
 apiVersion: networking.istio.io/v1alpha3
@@ -38,3 +41,16 @@ spec:
         host: kube-prom-stack-grafana.observability.svc.cluster.local
         port:
           number: 80 # This is the port exposed by the service
+
+---
+# Optional: If enabling TLS, create a Kubernetes secret for your TLS certificates
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#   name: grafana-tls-secret
+#   namespace: observability
+# type: kubernetes.io/tls
+# data:
+#   tls.crt: <base64 encoded cert>
+#   tls.key: <base64 encoded key>
+
