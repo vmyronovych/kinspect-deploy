@@ -38,3 +38,15 @@ kubectl apply -n argo-events -f https://raw.githubusercontent.com/argoproj/argo-
 ```bash
 kubectl apply -f ./ci-install.yaml
 ```
+
+## Install namespace into k8s
+
+```bash
+kubectl apply -f ./namespace.yaml
+```
+
+## Install argoapp into k8s
+
+```bash
+kubectl apply -f ./argoapp.yaml
+```

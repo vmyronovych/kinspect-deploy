@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: grafana.local
+  namespace: observability
+spec:
+  project: tools
+  source:
+    repoURL: https://github.com/vmyronovych/kinspect-deploy.git
+    path: tools/grafana/
+    targetRevision: main
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
