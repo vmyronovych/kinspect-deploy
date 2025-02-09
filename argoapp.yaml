@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kinspect-dev
+  namespace: argocd
+spec:
+  project: kinspect
+  source:
+    repoURL: https://github.com/vmyronovych/kinspect-deploy.git
+    path: src
+    targetRevision: main
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kinspect-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
