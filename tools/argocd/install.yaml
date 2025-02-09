@@ -28,6 +28,10 @@ spec:
         prefix: /
     route:
     - destination:
-        service: argocd-server
+        host: argocd-server.argocd.svc.cluster.local
         port:
           number: 8080
+    headers:
+      response:
+        add:
+          Set-Cookie: "SameSite=None; Secure"
