@@ -3,28 +3,29 @@ apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
   name: grafana-gateway
+  namespace: observability
 spec:
   selector:
     istio: ingressgateway # Use Istio's default ingress gateway
   servers:
   - port:
-      number: 80
-      name: http
-      protocol: HTTP
+      number: 443
+      name: https
+      protocol: HTTPS
     hosts:
     - "grafana.local" # Host to match for requests
-    # If you want to enable TLS, replace the following block
-    # tls:
-    #   mode: SIMPLE
-    #   credentialName: grafana-tls-secret # Replace with your secret name
-    #   privateKey: sds
-    #   serverCertificate: sds
+    tls:
+      mode: SIMPLE
+      credentialName: "" # Leave empty to use Istio's auto-provisioned certs
+      # Istio will use the default certificate for HTTPS termination
+      minProtocolVersion: TLSV1_2
 
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
   name: grafana-virtualservice
+  namespace: observability
 spec:
   hosts:
   - "grafana.local" # Host that matches the Gateway
@@ -41,14 +42,5 @@ spec:
           number: 80 # This is the port exposed by the service
 
 ---
-# Optional: If enabling TLS, create a Kubernetes secret for your TLS certificates
-# apiVersion: v1
-# kind: Secret
-# metadata:
-#   name: grafana-tls-secret
-#   namespace: observability
-# type: kubernetes.io/tls
-# data:
-#   tls.crt: <base64 encoded cert>
-#   tls.key: <base64 encoded key>
-
+# Optional: If using Istio's default TLS certs, no need to create a secret.
+# If you want to provide a custom certificate, you can specify it using a `credentialName`.
