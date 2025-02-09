@@ -1,0 +1,242 @@
+apiVersion: argoproj.io/v1alpha1
+kind: EventSource
+metadata:
+  name: webhook
+  namespace: argo-events
+spec:
+  service:
+    ports:
+      - port: 12000
+        targetPort: 12000
+  webhook:
+    example:
+      port: "12000"
+      endpoint: /example
+      method: POST
+
+    github:
+      port: "12000"
+      endpoint: /github
+      method: POST
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: polling-sensor
+  namespace: argo-events
+spec:
+  template:
+    serviceAccountName: argo-events-webhook-sa
+  dependencies:
+    - name: poll-github
+      eventSourceName: webhook
+      eventName: github
+  triggers:
+    - template:
+        name: kinspect-ci
+        argoWorkflow:
+          operation: submit
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: ci-kinspekt-api-
+              spec:
+                workflowTemplateRef:
+                  name: ci
+                arguments:
+                  parameters:
+                  - name: repo-url
+                    value: "https://github.com/vmyronovych/kinspect-api"
+                  - name: branch
+                    value: "main"
+                  - name: image
+                    value: "vmyronovych/kinspect-api"
+                  - name: dockerfile
+                    value: "Dockerfile"
+---
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: ci
+  namespace: argo-events
+spec:
+  entrypoint: main
+  serviceAccountName: default
+  arguments:
+    parameters:
+    - name: repo-url
+      value: "https://github.com/vmyronovych/kinspect-api"
+    - name: revision
+      value: "main"
+    - name: image
+      value: "vmyronovych/kinspect-api"
+    - name: dockerfile
+      value: "Dockerfile"
+
+  volumeClaimTemplates:
+  - metadata:
+      name: ci-storage
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 100Mi
+
+  volumes:
+  - name: docker-config
+    secret:
+      secretName: docker-registry-creds
+      items:
+        - key: .dockerconfigjson
+          path: config.json
+
+  templates:
+  - name: main
+    inputs:
+      parameters:
+      - name: repo-url
+      - name: revision
+      - name: image
+      - name: dockerfile
+    steps:
+    - - name: clone
+        template: clone
+        arguments:
+          parameters:
+          - name: repo-url
+            value: "{{inputs.parameters.repo-url}}"
+          - name: revision
+            value: "{{inputs.parameters.revision}}"
+
+    - - name: debug
+        template: ls-debug
+        arguments:
+          parameters:
+          - name: dir
+            value: "/mnt/sources"
+      
+    - - name: build-and-push-docker-image
+        template: build-and-push-docker-image
+        arguments:
+          parameters:
+          - name: commit-sha
+            value: "{{steps.clone.outputs.parameters.commit-sha}}"
+          - name: image
+            value: "{{inputs.parameters.image}}"
+          - name: dockerfile
+            value: "{{inputs.parameters.dockerfile}}"
+
+  # Clone task
+  - name: clone
+    inputs:
+      parameters:
+      - name: repo-url
+      - name: revision # can be tag as well
+      artifacts:
+      - name: sources
+        git:
+          repo: "{{inputs.parameters.repo-url}}"
+          revision: "{{inputs.parameters.revision}}"
+        path: /mnt/sources
+    script:
+      image: golang:1.19.4
+      command: [sh]
+      source: |
+        #!/bin/sh
+        COMMIT_SHA=$(git rev-parse --short HEAD)
+        echo $COMMIT_SHA > ../commit-sha.txt
+      workingDir: /mnt/sources/
+      volumeMounts:
+      - name: ci-storage
+        mountPath: /mnt/
+    outputs:
+      parameters:
+      - name: commit-sha
+        valueFrom:
+          path: /mnt/commit-sha.txt
+
+  # Image build and publish task using Kaniko
+  - name: build-and-push-docker-image
+    inputs:
+      parameters:
+      - name: commit-sha
+      - name: image
+      - name: dockerfile
+    container:
+      image: gcr.io/kaniko-project/executor:latest
+      command: ["/kaniko/executor"]
+      args:
+      - --dockerfile=/mnt/sources/{{inputs.parameters.dockerfile}}
+      - --context=/mnt/sources
+      - --destination={{inputs.parameters.image}}:{{inputs.parameters.commit-sha}}
+      - --force
+      volumeMounts:
+      - name: ci-storage
+        mountPath: /mnt
+      - name: docker-config
+        mountPath: /kaniko/.docker
+      env:
+      - name: DOCKER_CONFIG
+        value: /kaniko/.docker
+
+  - name: ls-debug
+    inputs:
+      parameters:
+      - name: dir
+    container:
+      image: busybox
+      command: [sh, -c]
+      args: ["ls -al {{inputs.parameters.dir}}"]
+      volumeMounts:
+        - name: ci-storage
+          mountPath: /mnt/
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: github-polling-job
+  namespace: argo-events
+spec:
+  schedule: "* * * * *"  # Poll every minute
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: poller
+            image: schoolofdevops/github-poller:latest
+            env:
+            - name: GITHUB_API_URL
+              value: "https://api.github.com/repos/vmyronovych/kinspect-api/commits"
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: github-token-secret
+                  key: token
+            - name: LAST_COMMIT_FILE
+              value: "/data/last_commit.txt"
+            - name: ARGO_EVENT_SOURCE_URL
+              value: "http://webhook-eventsource-svc.argo-events.svc.cluster.local:12000/github"
+            volumeMounts:
+            - name: commit-storage
+              mountPath: /data
+          restartPolicy: OnFailure
+          volumes:
+          - name: commit-storage
+            persistentVolumeClaim:
+              claimName: poller-pvc  # Use a PVC to persist the last commit file
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: poller-pvc
+  namespace: argo-events
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Mi
