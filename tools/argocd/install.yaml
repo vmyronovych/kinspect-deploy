@@ -1,36 +1,33 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
-  name: argocd-server-gateway
+  name: argocd-gateway
 spec:
   selector:
-    istio: ingressgateway  # Use Istio's default ingress gateway
+    istio: ingressgateway # This targets the default Istio ingressgateway
   servers:
   - port:
-      number: 443
-      name: https
-      protocol: HTTPS
+      number: 80
+      name: http
+      protocol: HTTP
     hosts:
-    - "argocd.local"  # Exposing HTTPS traffic
-    tls:
-      mode: PASSTHROUGH  # This tells Istio to pass-through traffic securely to the pod (without termination)
-      # credentialName: argocd-secret  # You can leave this out if you don't have certificates
+    - "argocd.local"
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: argocd-server
+  name: argocd
 spec:
   hosts:
-  - "argocd.local"  # Traffic routed for this host
+  - "argocd.local"
   gateways:
-  - argocd-server-gateway
+  - argocd-gateway
   http:
   - match:
     - uri:
-        prefix: /  # All traffic goes to the argocd-server
+        prefix: /
     route:
     - destination:
         host: argocd-server.argocd.svc.cluster.local
         port:
-          number: 443  # Port 443 for HTTPS traffic (your pods listen on HTTPS)
+          number: 80
