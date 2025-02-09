@@ -15,10 +15,8 @@ spec:
     hosts:
     - "grafana.local" # Host to match for requests
     tls:
-      mode: SIMPLE
-      credentialName: "" # Leave empty to use Istio's auto-provisioned certs
-      # Istio will use the default certificate for HTTPS termination
-      minProtocolVersion: TLSV1_2
+      mode: PASSTHROUGH # Use PASSTHROUGH to let Istio handle TLS termination
+      # Istio will auto-manage the certs in PASSTHROUGH mode and terminate the TLS connection
 
 ---
 apiVersion: networking.istio.io/v1alpha3
@@ -40,7 +38,3 @@ spec:
         host: kube-prom-stack-grafana.observability.svc.cluster.local
         port:
           number: 80 # This is the port exposed by the service
-
----
-# Optional: If using Istio's default TLS certs, no need to create a secret.
-# If you want to provide a custom certificate, you can specify it using a `credentialName`.
