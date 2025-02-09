@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
         - name: kinspect-api
-          image: vmyronovych/kinspect-api:5602ac7 # Replace with your container image (e.g., "myregistry/myimage:latest")
+          image: vmyronovych/kinspect-api:944562a
           ports:
             - containerPort: 8080  # Expose container on port 8080
