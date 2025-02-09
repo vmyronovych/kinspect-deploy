@@ -13,8 +13,8 @@ spec:
     hosts:
     - "argocd.local"  # Exposing HTTPS traffic
     tls:
-      mode: SIMPLE  # This tells Istio to pass-through traffic securely to the pod (without termination)
-      credentialName: argocd-secret  # You can leave this out if you don't have certificates
+      mode: PASSTHROUGH  # This tells Istio to pass-through traffic securely to the pod (without termination)
+      # credentialName: argocd-secret  # You can leave this out if you don't have certificates
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
