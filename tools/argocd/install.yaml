@@ -2,55 +2,38 @@ apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
   name: argocd-gateway
+  namespace: istio-system
 spec:
   selector:
-    istio: ingressgateway  # This selects Istio's ingress gateway
+    istio: ingressgateway  # Use the Istio ingress gateway
   servers:
-    - port:
-        number: 443
-        name: https
-        protocol: HTTPS
-      tls:
-        credentialName: argocd-cert-secret  # The secret containing the certificate
-        mode: SIMPLE
-        privateKey: sds
-        serverCertificate: sds
-      hosts:
-        - "argocd.local"  # Replace with your domain
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    tls:
+      mode: SIMPLE
+      credentialName: argocd-ingress-tls  # Reference the secret created earlier
+      minProtocolVersion: TLSV1_2
+    hosts:
+    - "argocd.local"  # The host for the ArgoCD UI
 
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: argocd-virtualservice
+  name: argocd
 spec:
   hosts:
-    - "argocd.local"  # Replace with your domain
+  - "argocd.local"  # The same host as the Gateway
   gateways:
-    - argocd-gateway
+  - argocd-gateway  # Reference the Gateway created earlier
   http:
-    - match:
-        - uri:
-            prefix: /
-      route:
-        - destination:
-            host: argocd-server.argocd.svc.cluster.local  # Replace with the ArgoCD server's DNS name
-            port:
-              number: 8080
-
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: argocd-cert
-spec:
-  secretName: argocd-cert-secret
-  issuerRef:
-    name: selfsigned-issuer
-    kind: Issuer
-  commonName: argocd.local  # Replace with your domain
-  dnsNames:
-    - argocd.local
-  duration: 8760h # 1 year
-  renewBefore: 360h # 15 days before expiry
-
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: argocd-server.argocd.svc.cluster.local  # The internal ArgoCD service
+        port:
+          number: 8080
