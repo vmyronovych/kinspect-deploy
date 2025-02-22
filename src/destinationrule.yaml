@@ -5,9 +5,9 @@ metadata:
 spec:
   host: kinspect-api.kinspect-dev.svc.cluster.local  # Your Kubernetes service name
   subsets:
-    - name: primary
+    - name: stable
       labels:
-        version: primary  # Label for the primary version
+        version: stable  # Label for the primary version
     - name: canary
       labels:
         version: canary  # Label for the canary version

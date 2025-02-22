@@ -39,15 +39,8 @@ spec:
           virtualService:
             name: kinspect-api  # Match this with the VirtualService name
             routes:
-              - destination:
-                  host: kinspect-api.kinspect-dev.svc.cluster.local
-                  port:
-                    number: 8080
-                  subset: primary
-                weight: 100
-              - destination:
-                  host: kinspect-api.kinspect-dev.svc.cluster.local
-                  port:
-                    number: 8080
-                  subset: canary
-                weight: 0
+            - http-app
+          destinationRule:
+            name: kinspect-api
+            canarySubsetName: canary
+            stableSubsetName: stable

@@ -17,7 +17,7 @@ spec:
             host: kinspect-api.kinspect-dev.svc.cluster.local  # Your Kubernetes service name
             port:
               number: 8080  # Application port (http-app)
-            subset: primary
+            subset: stable
           weight: 100
         - destination:
             host: kinspect-api.kinspect-dev.svc.cluster.local
