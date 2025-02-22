@@ -1,0 +1,13 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: kinspect-api
+spec:
+  host: kinspect-api.kinspect-dev.svc.cluster.local  # Your Kubernetes service name
+  subsets:
+    - name: primary
+      labels:
+        version: primary  # Label for the primary version
+    - name: canary
+      labels:
+        version: canary  # Label for the canary version

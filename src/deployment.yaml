@@ -18,9 +18,11 @@ spec:
         - name: kinspect-api
           image: vmyronovych/kinspect-api:71b96ef
           ports:
-            - containerPort: 8080
+            - containerPort: 8080  # http-app port
   strategy:
     canary:
+      maxSurge: 1
+      maxUnavailable: 0
       steps:
         - setWeight: 10
         - pause:
@@ -32,3 +34,10 @@ spec:
         - pause:
             duration: 30s
         - setWeight: 100
+      trafficRouting:
+        istio:
+          virtualService:
+            name: kinspect-api
+            routes:
+              - primary: 100
+                canary: 0

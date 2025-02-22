@@ -4,15 +4,24 @@ metadata:
   name: kinspect-api
 spec:
   hosts:
-    - "kinspect.api.local"  # This should match the host in the Gateway
+    - "kinspect.api.local"  # Match this with the host in your Gateway
   gateways:
     - kinspect-gateway  # Reference to the Gateway
   http:
-    - match:
+    - name: http-app
+      match:
         - uri:
-            prefix: /  # Match all paths
+            prefix: /  # Match all paths for application traffic
       route:
         - destination:
             host: kinspect-api.kinspect-dev.svc.cluster.local  # Your Kubernetes service name
             port:
-              number: 8080  # Expose container on port 8080
+              number: 8080  # Application port (http-app)
+            subset: primary
+          weight: 100
+        - destination:
+            host: kinspect-api.kinspect-dev.svc.cluster.local
+            port:
+              number: 8080
+            subset: canary
+          weight: 0
