@@ -6,7 +6,8 @@ spec:
   selector:
     app: kinspect-api
   ports:
-    - protocol: TCP
+    - name: http-app
+      protocol: TCP
       port: 8080
       targetPort: 8080
     - name: http-envoy-prom
