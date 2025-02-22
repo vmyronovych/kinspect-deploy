@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: kinspect-api
-          image: vmyronovych/kinspect-api:2b1aa48
+          image: vmyronovych/kinspect-api:71b96ef
           ports:
             - containerPort: 8080
   strategy:
