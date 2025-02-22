@@ -11,8 +11,5 @@ spec:
     matchNames:
     - kinspect-dev
   selector:
-    matchExpressions:
-    - key: app.kubernetes.io/instance
-      operator: In
-      values:
-      - kinspect-dev
+    matchLabels:
+      app.kubernetes.io/instance: kinspect-dev
