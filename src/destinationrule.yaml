@@ -3,11 +3,11 @@ kind: DestinationRule
 metadata:
   name: kinspect-api
 spec:
-  host: kinspect-api.kinspect-dev.svc.cluster.local  # Your Kubernetes service name
+  host: kinspect-api # Your Kubernetes service name
   subsets:
     - name: stable
       labels:
-        version: stable  # Label for the primary version
+        app: kinspect-api
     - name: canary
       labels:
-        version: canary  # Label for the canary version
+        app: kinspect-api

@@ -14,13 +14,13 @@ spec:
             prefix: /  # Match all paths for application traffic
       route:
         - destination:
-            host: kinspect-api.kinspect-dev.svc.cluster.local  # Your Kubernetes service name
+            host: kinspect-api
             port:
               number: 8080  # Application port (http-app)
             subset: stable
           weight: 100
         - destination:
-            host: kinspect-api.kinspect-dev.svc.cluster.local
+            host: kinspect-api
             port:
               number: 8080
             subset: canary
