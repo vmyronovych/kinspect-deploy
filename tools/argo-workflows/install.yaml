@@ -1,34 +1,34 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
-  name: argocd-gateway
+  name: argo-workflows-gateway
 spec:
   selector:
-    istio: ingressgateway  # Use the Istio ingress gateway
+    istio: ingressgateway
   servers:
   - port:
       number: 80
       name: http
       protocol: HTTP
     hosts:
-    - "argocd.local"  # The host for the ArgoCD UI
+    - "argo-workflows.local"
 
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: argocd
+  name: argo-workflows
 spec:
   hosts:
-  - "argocd.local"  # The same host as the Gateway
+  - "argo-workflows.local"
   gateways:
-  - argocd-gateway  # Reference the Gateway created earlier
+  - argo-workflows-gateway
   http:
   - match:
     - uri:
         prefix: /
     route:
     - destination:
-        host: argocd-server.argocd.svc.cluster.local  # The internal ArgoCD service
+        host: argo-server.argo.svc.cluster.local
         port:
-          number: 8080
+          number: 2746

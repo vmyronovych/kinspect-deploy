@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argo-workflows.local
+  namespace: argocd
+spec:
+  project: tools
+  source:
+    repoURL: https://github.com/vmyronovych/kinspect-deploy.git
+    path: tools/argo-workflows/
+    targetRevision: main
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argo
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
