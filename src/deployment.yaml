@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
         - name: kinspect-api
-          image: vmyronovych/kinspect-api:e7a7a6a
+          image: vmyronovych/kinspect-api:2b1aa48
           ports:
             - containerPort: 8080  # Expose container on port 8080
