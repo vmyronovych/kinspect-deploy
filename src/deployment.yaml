@@ -37,7 +37,17 @@ spec:
       trafficRouting:
         istio:
           virtualService:
-            name: kinspect-api
+            name: kinspect-api  # Match this with the VirtualService name
             routes:
-              - primary: 100
-                canary: 0
+              - destination:
+                  host: kinspect-api.kinspect-dev.svc.cluster.local
+                  port:
+                    number: 8080
+                  subset: primary
+                weight: 100
+              - destination:
+                  host: kinspect-api.kinspect-dev.svc.cluster.local
+                  port:
+                    number: 8080
+                  subset: canary
+                weight: 0
