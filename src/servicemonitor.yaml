@@ -12,4 +12,4 @@ spec:
     - kinspect-dev
   selector:
     matchLabels:
-      app.kubernetes.io/instance: kinspect-dev
+      app: kinspect-api

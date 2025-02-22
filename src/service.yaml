@@ -2,6 +2,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: kinspect-api
+  labels:
+    app: kinspect-api
 spec:
   selector:
     app: kinspect-api
