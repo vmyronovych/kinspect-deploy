@@ -1,11 +1,11 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
 metadata:
   name: kinspect-api
   labels:
     app: kinspect-api
 spec:
-  replicas: 1
+  replicas: 10
   selector:
     matchLabels:
       app: kinspect-api
@@ -18,4 +18,17 @@ spec:
         - name: kinspect-api
           image: vmyronovych/kinspect-api:2b1aa48
           ports:
-            - containerPort: 8080  # Expose container on port 8080
+            - containerPort: 8080
+  strategy:
+    canary:
+      steps:
+        - setWeight: 10
+        - pause:
+            duration: 30s
+        - setWeight: 25
+        - pause:
+            duration: 30s
+        - setWeight: 50
+        - pause:
+            duration: 30s
+        - setWeight: 100
